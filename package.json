@@ -1,0 +1,23 @@
+{
+  "name": "notion-server",
+  "version": "1.0.0",
+  "description": "notion server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JesusEdu20/notion-server.git"
+  },
+  "keywords": [
+    "server",
+    "notion"
+  ],
+  "author": "Jesus Castillo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JesusEdu20/notion-server/issues"
+  },
+  "homepage": "https://github.com/JesusEdu20/notion-server#readme"
+}
