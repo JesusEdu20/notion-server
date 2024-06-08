@@ -19,5 +19,17 @@
   "bugs": {
     "url": "https://github.com/JesusEdu20/notion-server/issues"
   },
-  "homepage": "https://github.com/JesusEdu20/notion-server#readme"
+  "homepage": "https://github.com/JesusEdu20/notion-server#readme",
+  "dependencies": {
+    "@notionhq/client": "^2.2.15",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "./node_modules/standard/eslintrc.json"
+    ]
+  }
 }
