@@ -1,0 +1,8 @@
+POST http://localhost:8080/pages
+Content-Type: application/json
+
+{   
+    "dbID":"d7072c6f25a9437088f4bcc40ad2a8ae",
+    "pageName":"testCompany",
+    "link":"https://www.youtube.com/watch?v=rVrgadu3Z4c"
+}
