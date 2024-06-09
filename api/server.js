@@ -8,7 +8,7 @@ const notion = new Client({ auth: process.env.NOTION_KEY })
 app.use(express.json()) // for parsing application/json
 
 app.get('/test', function (req, res) {
-  res.send(`${process.env.NOTION_KEY}`)
+  res.send('hello world')
 })
 // Create new page. The database ID is provided in the web form.
 app.post('/pages', async function (request, response) {
