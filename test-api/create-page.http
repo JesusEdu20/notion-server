@@ -1,8 +1,33 @@
-POST https://notion-server-alpha.vercel.app/pages
+POST https://notion-server-amaro.vercel.app/pages
 Content-Type: application/json
 
 {   
     "dbID":"d7072c6f25a9437088f4bcc40ad2a8ae",
-    "pageName":"testCompany",
+    "pageName":"fromVercelOnNewDomain",
     "link":"https://www.youtube.com/watch?v=rVrgadu3Z4c"
 }
+
+###
+POST http://localhost:8080/slack-command-pages
+Content-Type: application/json
+
+{   
+    "text":"d7072c6f25a9437088f4bcc40ad2a8ae-fromVercelOnNewDomain-link"
+}
+
+###
+POST https://notion-server-amaro.vercel.app/slack-command-pages
+Content-Type: application/json
+
+{   
+    "text":"d7072c6f25a9437088f4bcc40ad2a8ae-slacktestimite-link"
+}
+
+###
+POST https://notion-server-amaro.vercel.app/slack-command-pages
+Content-Type: application/json
+
+{   
+    "text":"d7072c6f25a9437088f4bcc40ad2a8ae-slacktestimite-link"
+}
+
