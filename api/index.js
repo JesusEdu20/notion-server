@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const bodyParser = require('body-parser')
+const dbCMS = require('../cm/db-id')
 
 const { Client } = require('@notionhq/client')
 
@@ -54,46 +55,54 @@ app.post('/pages', async function (request, response) {
 
 app.post('/slack-command-pages', async function (request, response) {
   try {
-    const { text } = request.body
+    const { text, user_id } = request.body
     if (!text) {
-      return response.status(400).json({ message: 'Missing text parameter' })
+      return response.status(400).json({ response_type: 'in_channel', message: 'Parámetros faltante' })
     }
 
-    const data = text.trim().split('-')
-    if (data.length !== 3) {
-      return response.status(400).json({ message: 'Invalid text format. Expected format: dbID-pageName-link' })
+    const index = text.indexOf('-')
+    const data = index !== -1 ? [text.substring(0, index), text.substring(index + 1)] : [text]
+    /* const data = text.trim().split('-') */
+    if (data.length !== 2) {
+      return response.status(400).json({ response_type: 'in_channel', message: 'Formato de texto no válido. Formato esperado: enlace-empresa' })
     }
 
-    const [dbID, pageName, link] = data
-    if (!dbID || !pageName || !link) {
-      return response.status(400).json({ message: 'Missing required parameters' })
+    const [pageName, link] = data
+    if (!pageName || !link) {
+      return response.status(400).json({ response_type: 'in_channel', message: 'Faltan parámetros requeridos' })
     }
 
     const newPage = await notion.pages.create({
       parent: {
         type: 'database_id',
-        database_id: dbID
+        database_id: dbCMS[user_id][1]
       },
       properties: {
         empresa: {
           title: [
             {
               text: {
-                content: pageName
+                content: `${pageName}-${user_id}`
               }
             }
           ]
         },
         post: {
           url: link
+        },
+        fecha: {
+          date: {
+            start: new Date().toISOString(),
+            end: null
+          }
         }
       }
     })
 
-    response.json({ response_type: 'in_channel', text: 'Page created successfully!', data: newPage })
+    response.json({ response_type: 'in_channel', text: 'La publicación ha sido registrada!', data: newPage })
   } catch (error) {
     console.error(error) // Log the error for debugging
-    response.status(500).json({ response_type: 'ephemeral', text: 'Error creating page', error: error.message })
+    response.status(500).json({ response_type: 'in_channel', text: 'Ha ocurrido un error inesperado', error: error.message })
   }
 })
 
