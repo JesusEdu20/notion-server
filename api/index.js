@@ -33,12 +33,6 @@ function getMonthRange (typeOfObject = 'object') {
 app.use(express.json()) // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
-app.get('/', (req, res) => res.send('Express on Vercel'))
-
-app.get('/test', function (req, res) {
-  res.send('hello world')
-})
-
 app.post('/pages', async function (request, response) {
   try {
     const { dbID, pageName, link } = request.body
