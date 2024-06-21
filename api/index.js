@@ -52,12 +52,7 @@ app.post('/pages', async function (request, response) {
 
 // slack post command
 app.post('/slack-command-pages', slackCommand.post)
-
 app.post('/slack-command-pages/database', slackCommand.getInform)
-
-app.get('/slack-command-pages', async function (req, res) {
-  res.json('todo bien')
-})
 
 const listener = app.listen(PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port)
