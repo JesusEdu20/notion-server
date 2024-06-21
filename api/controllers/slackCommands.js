@@ -74,7 +74,7 @@ class slackCommand {
         if (index + 1 === response.results.length) {
           const cmData = cmDashboard.filter(item => item.cm === cm)
 
-          inform += `\n\n Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].assignedCompanies}`
+          inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].assignedCompanies}*`
         }
       })
 

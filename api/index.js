@@ -52,6 +52,8 @@ app.post('/pages', async function (request, response) {
 
 // slack post command
 app.post('/slack-command-pages', slackCommand.post)
+
+// slack get inform command
 app.post('/slack-command-pages/database', slackCommand.getInform)
 
 const listener = app.listen(PORT, function () {
