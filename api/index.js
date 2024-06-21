@@ -112,26 +112,7 @@ app.post('/slack-command-pages/database', async (req, res) => {
   const date = range === 'semana' ? getWeekRange() : getMonthRange()
   let inform = ''
   try {
-    const response = await notion.databases.query({
-      database_id: databaseId,
-
-      filter: {
-        and: [
-          {
-            property: 'fecha',
-            date: {
-              on_or_after: date.start
-            }
-          },
-          {
-            property: 'fecha',
-            date: {
-              on_or_before: date.end
-            }
-          }
-        ]
-      }
-    })
+    const response = await postDatabase.getPages(databaseId, date)
     const cmDashboard = await getCmsDashboard()
 
     response.results.forEach((page, index) => {

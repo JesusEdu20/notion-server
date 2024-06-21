@@ -52,6 +52,30 @@ class postDatabase {
 
     return page
   }
+
+  static getPages = async (databaseId, date) => {
+    const pages = await notion.databases.query({
+      database_id: databaseId,
+
+      filter: {
+        and: [
+          {
+            property: 'fecha',
+            date: {
+              on_or_after: date.start
+            }
+          },
+          {
+            property: 'fecha',
+            date: {
+              on_or_before: date.end
+            }
+          }
+        ]
+      }
+    })
+    return pages
+  }
 }
 
 module.exports = postDatabase
