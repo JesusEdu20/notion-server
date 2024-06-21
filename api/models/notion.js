@@ -19,6 +19,20 @@ class postDatabase {
     return data
   }
 
+  static getCmsDashboard = async () => {
+    const response = await notion.databases.query({
+      database_id: process.env.CMSDASHBOARD
+    })
+    const data = response.results.map((page) => {
+      const cm = page.properties.nombre.title[0].text.content.toLowerCase()
+      const postsPerWeek = page.properties.nro_publi_semanales.formula.number
+      const assignedCompanies = page.properties.nro_emp_asignadas.rollup.number
+      return { postsPerWeek, assignedCompanies, cm }
+    })
+
+    return data
+  }
+
   static createPost = async (user_id, pageName, link) => {
     const dbCMS = await this.getCmPermission()
     console.log(user_id)

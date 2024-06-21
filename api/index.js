@@ -12,24 +12,6 @@ const app = express()
 const PORT = process.env.PORT || 8080
 const notion = new Client({ auth: process.env.NOTION_KEY })
 
-function getWeekRange (typeOfObject = 'object') {
-  const startOfWeek = moment().startOf('isoWeek').toISOString()
-  const endOfWeek = moment().endOf('isoWeek').toISOString()
-  if (typeOfObject === 'array') {
-    return [startOfWeek, endOfWeek]
-  }
-  return { start: startOfWeek, end: endOfWeek }
-}
-
-function getMonthRange (typeOfObject = 'object') {
-  const startOfMonth = moment().startOf('month').toISOString()
-  const endOfMonth = moment().endOf('month').toISOString()
-  if (typeOfObject === 'array') {
-    return [startOfMonth, endOfMonth]
-  }
-  return { start: startOfMonth, end: endOfMonth }
-}
-
 app.use(express.json()) // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
@@ -71,69 +53,7 @@ app.post('/pages', async function (request, response) {
 // slack post command
 app.post('/slack-command-pages', slackCommand.post)
 
-const getCmsDashboard = async () => {
-  const response = await notion.databases.query({
-    database_id: process.env.CMSDASHBOARD
-  })
-  const data = response.results.map((page) => {
-    const cm = page.properties.nombre.title[0].text.content.toLowerCase()
-    const postsPerWeek = page.properties.nro_publi_semanales.formula.number
-    const assignedCompanies = page.properties.nro_emp_asignadas.rollup.number
-    return { postsPerWeek, assignedCompanies, cm }
-  })
-
-  return data
-}
-
-const getCmPermission = async () => {
-  const response = await notion.databases.query({
-    database_id: process.env.PERMISSION_CM_DATABASE_ID
-  })
-  const data = response.results.map((page) => {
-    const idUser = page.properties.id_user.title[0].text.content
-    const cmName = page.properties.cm_name.rich_text[0].text.content
-    const dbId = page.properties.db_id.rich_text[0].text.content
-    return { idUser, cmName, dbId }
-  })
-
-  return data
-}
-
-app.post('/slack-command-pages/database', async (req, res) => {
-  const { user_id, text } = req.body
-  const data = text.split('-')
-  const doc = data[0]
-  const cm = data[1].toLowerCase()
-  const range = data[2]
-  const dbCMS = await getCmPermission()
-
-  const databaseId = dbCMS.find(item => item.cmName === cm).dbId
-
-  const date = range === 'semana' ? getWeekRange() : getMonthRange()
-  let inform = ''
-  try {
-    const response = await postDatabase.getPages(databaseId, date)
-    const cmDashboard = await getCmsDashboard()
-
-    response.results.forEach((page, index) => {
-      const titleProp = page.properties.empresa.title[0].text.content.split('-')
-
-      const empresa = titleProp[0]
-
-      inform += `${index + 1}. *${empresa.padEnd(16)}* ${new Date(page.properties.fecha.date.start).toLocaleString()} ${page.properties.post.url} \n`
-      if (index + 1 === response.results.length) {
-        const cmData = cmDashboard.filter(item => item.cm === cm)
-
-        inform += `\n\n Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].assignedCompanies}`
-      }
-    })
-
-    res.json({ response_type: 'in_channel', text: `${inform}` })
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('An error occurred while querying the database pages')
-  }
-})
+app.post('/slack-command-pages/database', slackCommand.getInform)
 
 app.get('/slack-command-pages', async function (req, res) {
   res.json('todo bien')
