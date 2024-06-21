@@ -72,6 +72,7 @@ app.post('/pages', async function (request, response) {
   }
 })
 
+// post
 app.post('/slack-command-pages', async function (request, response) {
   try {
     const { text, user_id } = request.body
