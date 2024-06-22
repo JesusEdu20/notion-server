@@ -26,8 +26,9 @@ class postDatabase {
     const data = response.results.map((page) => {
       const cm = page.properties.nombre.title[0].text.content.toLowerCase()
       const postsPerWeek = page.properties.nro_publi_semanales.formula.number
+      const activeCompanies = page.properties.nro_emp_activas.formula.number
       const assignedCompanies = page.properties.nro_emp_asignadas.rollup.number
-      return { postsPerWeek, assignedCompanies, cm }
+      return { postsPerWeek, assignedCompanies, cm, activeCompanies }
     })
 
     return data
