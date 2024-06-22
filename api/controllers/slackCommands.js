@@ -70,12 +70,12 @@ class slackCommand {
         const titleProp = page.properties.empresa.title[0].text.content.split('-')
         const empresa = titleProp[0]
 
-        if (Object.hasOwn(amountOfPostByCompany, empresa)) {
+        if (amountOfPostByCompany.hasOwnProperty(empresa.toLowerCase())) {
           // Si existe, incrementar su valor en 1
-          amountOfPostByCompany[empresa] += 1
+          amountOfPostByCompany[empresa.toLowerCase()] += 1
         } else {
           // Si no existe, crear la propiedad y asignarle el valor de 1
-          amountOfPostByCompany[empresa] = 1
+          amountOfPostByCompany[empresa.toLowerCase()] = 1
         }
 
         inform += `${index + 1}. *${empresa.padEnd(16)}* ${new Date(page.properties.fecha.date.start).toLocaleString()} ${page.properties.post.url} \n`
@@ -83,8 +83,7 @@ class slackCommand {
           const cmData = cmDashboard.filter(item => item.cm === cm)
           const postsByCompanyEntries = Object.entries(amountOfPostByCompany)
           const postsByCompanyString = postsByCompanyEntries.map(([key, value]) => `${key}: ${value}`).join(', ')
-          inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].assignedCompanies}*\n 
-          ${postsByCompanyString}`
+          inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].assignedCompanies}*\n${postsByCompanyString}`
         }
       })
 
