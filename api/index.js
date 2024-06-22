@@ -56,6 +56,9 @@ app.post('/slack-command-pages', slackCommand.post)
 // slack get inform command
 app.post('/slack-command-pages/database', slackCommand.getInform)
 
+// slack status command
+app.post('/slack-command-pages/status', slackCommand.getCompaniesReport)
+
 const listener = app.listen(PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port)
 })

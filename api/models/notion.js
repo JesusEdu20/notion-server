@@ -13,7 +13,9 @@ class postDatabase {
       const idUser = page.properties.id_user.title[0].text.content
       const cmName = page.properties.cm_name.rich_text[0].text.content
       const dbId = page.properties.db_id.rich_text[0].text.content
-      return { idUser, cmName, dbId }
+      const role = page.properties.role.rich_text[0].text.content
+
+      return { idUser, cmName, dbId, role }
     })
 
     return data
@@ -69,28 +71,84 @@ class postDatabase {
   }
 
   static getPages = async (databaseId, date) => {
-    const pages = await notion.databases.query({
-      database_id: databaseId,
+    if (date) {
+      const pages = await notion.databases.query({
+        database_id: databaseId,
+        filter: {
+          and: [
+            {
+              property: 'fecha',
+              date: {
+                on_or_after: date.start
+              }
+            },
+            {
+              property: 'fecha',
+              date: {
+                on_or_before: date.end
+              }
+            }
+          ]
+        }
 
-      filter: {
-        and: [
-          {
-            property: 'fecha',
-            date: {
-              on_or_after: date.start
-            }
-          },
-          {
-            property: 'fecha',
-            date: {
-              on_or_before: date.end
-            }
+      })
+      return pages
+    } else {
+      const pages = await notion.databases.query({
+        database_id: databaseId,
+        filter: {
+          property: 'Status',
+          status: {
+            equals: 'Activo'
           }
-        ]
-      }
-    })
-    return pages
+        }
+
+      })
+      return pages
+    }
   }
 }
 
 module.exports = postDatabase
+
+/*
+filter: {
+  and: [
+    {
+      property: 'fecha',
+      date: {
+        on_or_after: date.start
+      }
+    },
+    {
+      property: 'fecha',
+      date: {
+        on_or_before: date.end
+      }
+    }
+  ]
+} */
+/*  filter: {
+    property: 'Status',
+    status: {
+      equals: 'Activo'
+    }
+  } */
+
+/* filter: {
+  and: [
+    {
+      property: 'fecha',
+      date: {
+        on_or_after: date.start
+      }
+    },
+    {
+      property: 'fecha',
+      date: {
+        on_or_before: date.end
+      }
+    }
+  ]
+}
+ */

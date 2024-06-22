@@ -45,6 +45,16 @@ Content-Type: application/json
 }
 
 ###
+POST http://localhost:8080/slack-command-pages/status
+Content-Type: application/json
+
+{   
+    "text":"semana",
+    "user_id":"U076NNY5X6Y"
+}
+
+
+###
 POST https://notion-server-amaro.vercel.app/slack-command-pages/database
 Content-Type: application/json
 

@@ -64,25 +64,15 @@ class slackCommand {
     try {
       const response = await postDatabase.getPages(databaseId, date)
       const cmDashboard = await postDatabase.getCmsDashboard()
-      /*  const amountOfPostByCompany = {} */
 
       response.results.forEach((page, index) => {
         const titleProp = page.properties.empresa.title[0].text.content.split('-')
         const empresa = titleProp[0]
 
-        /* if (amountOfPostByCompany.hasOwnProperty(empresa.toLowerCase())) {
-          // Si existe, incrementar su valor en 1
-          amountOfPostByCompany[empresa.toLowerCase()] += 1
-        } else {
-          // Si no existe, crear la propiedad y asignarle el valor de 1
-          amountOfPostByCompany[empresa.toLowerCase()] = 1
-        } */
-
         inform += `${index + 1}. *${empresa.padEnd(16)}* ${new Date(page.properties.fecha.date.start).toLocaleString()} ${page.properties.post.url} \n`
         if (index + 1 === response.results.length) {
           const cmData = cmDashboard.filter(item => item.cm === cm)
-          /* const postsByCompanyEntries = Object.entries(amountOfPostByCompany) */
-          /* const postsByCompanyString = postsByCompanyEntries.map(([key, value]) => `${key}: ${value}`).join(', ') */
+
           inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].activeCompanies}*`
         }
       })
@@ -91,6 +81,38 @@ class slackCommand {
     } catch (error) {
       console.error(error)
       res.status(500).send('An error occurred while querying the database pages')
+    }
+  }
+
+  static getCompaniesReport = async (req, res) => {
+    const { user_id, text } = req.body
+    const data = text.split('-')
+    const range = data[0]
+    const userData = await postDatabase.getCmPermission()
+    const userRole = userData.find(user => user.idUser === user_id).role
+    let inform = ''
+    if (userRole === 'sup' || userRole === 'admin') {
+      try {
+        const date = range === 'semana' ? getWeekRange() : getMonthRange()
+        const numberOfcompaniesActives = (await postDatabase.getPages(process.env.COMPANY_DATABASE_ID)).results.length
+        const inactiveCompanies = await postDatabase.getPages(process.env.COMPANY_DATABASE_ID, date)
+
+        inactiveCompanies.results.forEach((company, index) => {
+          const titleProp = company.properties.Name.title[0].text.content.split('-')
+          const companyName = titleProp[0]
+          inform += `${index + 1}. *${companyName.padEnd(16)}* ${new Date(company.properties.fecha.date.start).toLocaleString()} ${company.properties.Nota.rich_text[0].text.content}`
+
+          if (index + 1 === inactiveCompanies.results.length) {
+            inform += `\n\n *Total:* ${inactiveCompanies.results.length}\n Empresas Activas: ${numberOfcompaniesActives}`
+          }
+        })
+        res.json({ response_type: 'in_channel', text: inform })
+      } catch (error) {
+        console.log(error)
+        res.status(500).send('An error occurred while querying the database pages')
+      }
+    } else {
+      res.status(500).send('access denied')
     }
   }
 }
