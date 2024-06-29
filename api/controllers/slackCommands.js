@@ -1,4 +1,5 @@
 require('dotenv').config()
+
 const moment = require('moment')
 const postDatabase = require('../models/notion.js')
 
@@ -9,6 +10,21 @@ function getWeekRange (typeOfObject = 'object') {
     return [startOfWeek, endOfWeek]
   }
   return { start: startOfWeek, end: endOfWeek }
+}
+
+function getPreviousWeekRange (typeOfObject = 'object') {
+  const startOfPreviousWeek = moment().subtract(1, 'weeks').startOf('isoWeek').toISOString()
+  const endOfPreviousWeek = moment().subtract(1, 'weeks').endOf('isoWeek').toISOString()
+
+  if (typeOfObject === 'array') {
+    return [startOfPreviousWeek, endOfPreviousWeek]
+  }
+
+  const start = moment(startOfPreviousWeek).startOf('day').toISOString()
+
+  // Set end time to just before midnight (23:59:59.999)
+  const end = moment(endOfPreviousWeek).endOf('day').toISOString()
+  return { start, end }
 }
 
 function getMonthRange (typeOfObject = 'object') {
@@ -59,21 +75,39 @@ class slackCommand {
 
     const databaseId = dbCMS.find(item => item.cmName === cm).dbId
 
-    const date = range === 'semana' ? getWeekRange() : getMonthRange()
+    let date
+    if (range === 'semana') {
+      date = getWeekRange()
+    } else if (range === 'mes') {
+      date = getMonthRange()
+    } else if (range === 'anterior') {
+      date = getPreviousWeekRange()
+    }
+    console.log(date)
     let inform = ''
     try {
       const response = await postDatabase.getPages(databaseId, date)
       const cmDashboard = await postDatabase.getCmsDashboard()
+      const amountOfPostByCompany = {}
 
       response.results.forEach((page, index) => {
         const titleProp = page.properties.empresa.title[0].text.content.split('-')
         const empresa = titleProp[0]
+        if (Object.hasOwn(amountOfPostByCompany, empresa)) {
+          // Si existe, incrementar su valor en 1
+          amountOfPostByCompany[empresa] += 1
+        } else {
+          // Si no existe, crear la propiedad y asignarle el valor de 1
+          amountOfPostByCompany[empresa] = 1
+        }
 
         inform += `${index + 1}. *${empresa.padEnd(16)}* ${new Date(page.properties.fecha.date.start).toLocaleString()} ${page.properties.post.url} \n`
         if (index + 1 === response.results.length) {
           const cmData = cmDashboard.filter(item => item.cm === cm)
+          const postsByCompanyEntries = Object.entries(amountOfPostByCompany)
+          const postsByCompanyString = postsByCompanyEntries.map(([key, value]) => `${key}: ${value}`).join(', ')
 
-          inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].activeCompanies}*`
+          inform += `\n\n *Publicados: ${response.results.length}/${cmData[0].postsPerWeek} Empresas activas: ${cmData[0].activeCompanies}* \n${postsByCompanyString}`
         }
       })
 
@@ -90,7 +124,7 @@ class slackCommand {
     const range = data[0]
     const userData = await postDatabase.getCmPermission()
     const userRole = userData.find(user => user.idUser === user_id).role
-    let inform = ''
+    let inform = '*Empresas que abandonaron el servicio este mes*\n\n'
     if (userRole === 'sup' || userRole === 'admin') {
       try {
         const date = range === 'semana' ? getWeekRange() : getMonthRange()
@@ -100,10 +134,11 @@ class slackCommand {
         inactiveCompanies.results.forEach((company, index) => {
           const titleProp = company.properties.Name.title[0].text.content.split('-')
           const companyName = titleProp[0]
-          inform += `${index + 1}. *${companyName.padEnd(16)}* ${new Date(company.properties.fecha.date.start).toLocaleString()} ${company.properties.Nota.rich_text[0].text.content}`
+          const reason = company.properties.Nota.rich_text[0].text.content === 'undefined' ? 'sin motivo registrado' : company.properties.Nota.rich_text[0].text.content
+          inform += `${index + 1}. *${companyName.padEnd(16)}* ${new Date(company.properties.fecha.date.start).toLocaleString()} ${reason}\n`
 
           if (index + 1 === inactiveCompanies.results.length) {
-            inform += `\n\n *Total:* ${inactiveCompanies.results.length}\n Empresas Activas: ${numberOfcompaniesActives}`
+            inform += `\n\n *Total: ${inactiveCompanies.results.length}*\n *Empresas Activas: ${numberOfcompaniesActives}*`
           }
         })
         res.json({ response_type: 'in_channel', text: inform })

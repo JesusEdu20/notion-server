@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "notion server",
   "main": "index.js",
+  
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon api/index.js",
@@ -24,6 +25,7 @@
   "homepage": "https://github.com/JesusEdu20/notion-server#readme",
   "dependencies": {
     "@notionhq/client": "^2.2.15",
+    "@slack/bolt": "^3.19.0",
     "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

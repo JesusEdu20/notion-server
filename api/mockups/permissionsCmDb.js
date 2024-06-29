@@ -1,4 +1,4 @@
-const test = [
+export const test = [
   {
     object: 'page',
     id: 'a0da3082-d89a-4ee9-b37f-4c32e1ff0bf1',

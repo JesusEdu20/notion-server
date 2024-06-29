@@ -1,5 +1,8 @@
 const { Client } = require('@notionhq/client')
+const schemaPropertiesToFilter = require('./schemaPropertyFilters')
+
 require('dotenv').config()
+
 /* const moment = require('moment') */
 
 const notion = new Client({ auth: process.env.NOTION_KEY })
@@ -19,6 +22,13 @@ class postDatabase {
     })
 
     return data
+  }
+
+  static getCmName = async (idUser) => {
+    const filter = this.createFilter('id_user', 'title', 'equals', idUser)
+    const pages = await this.collectPages(process.env.PERMISSION_CM_DATABASE_ID, filter)
+    const name = pages[0].properties.cm_name.rich_text[0].plain_text
+    return name
   }
 
   static getCmsDashboard = async () => {
@@ -107,7 +117,41 @@ class postDatabase {
       return pages
     }
   }
+
+  static collectPages = async (databaseId, filter, ...filters) => {
+    const target = {
+      database_id: databaseId
+    }
+
+    if (filter) {
+      target.filter = filter
+    } else if (filters) {
+      target.filter = filters
+    }
+
+    console.log(target)
+    const pages = await notion.databases.query(target)
+    /*  console.log(pages.results)
+    console.log('collectPages', filter) */
+    return pages.results
+  }
+
+  static createFilter = (propertyName, typeProperty, operator, value) => {
+    const filter = schemaPropertiesToFilter.find((filterSchema) => {
+      for (const key in filterSchema) {
+        if (key === typeProperty) {
+          filterSchema.property = propertyName
+          filterSchema[typeProperty][operator] = value
+          return true
+        }
+      }
+    })
+
+    return filter
+  }
 }
+
+/* console.log('aqui', postDatabase.createFilter('Status', 'checkbox', 'equals', 'true')) */
 
 module.exports = postDatabase
 
@@ -151,4 +195,22 @@ filter: {
     }
   ]
 }
+ */
+/* const filter = postDatabase.createFilter('id_user', 'title', 'equals', 'U076NNY5X6Y') */
+/* async function test () {
+  const pages = await notion.databases.query({
+    database_id: process.env.PERMISSION_CM_DATABASE_ID,
+    filter
+
+  })
+
+  console.log(pages.results[0].properties.cm_name)
+} */
+/* async function test () {
+  const pages = await postDatabase.collectPages(process.env.PERMISSION_CM_DATABASE_ID, filter)
+
+  console.log(pages[0].properties.cm_name.rich_text[0].plain_text)
+}
+
+test()
  */
