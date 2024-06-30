@@ -9,23 +9,24 @@ const slackCommand = require('./controllers/slackCommands.js')
 
 const { Client } = require('@notionhq/client')
 const slack = require('@slack/bolt').App
+const savePostModal = require('./controllers/slack-blocks/blocks.js')
 
 /* const app = express() */
 const PORT = process.env.PORT || 80
 const notion = new Client({ auth: process.env.NOTION_KEY })
 
 const slackApp = new slack({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  token: process.env.SLACK_BOT_TOKEN_TEST,
+  signingSecret: process.env.SLACK_SIGNING_SECRET_TEST,
   socketMode: true,
-  appToken: process.env.SLACK_APP_TOKEN
+  appToken: process.env.SLACK_APP_TOKEN_TEST
   // Socket Mode doesn't listen on a port, but in case you want your app to respond to OAuth,
   // you still need to listen on some port!
   /* port: process.env.PORT || 3000 */
 })
 
-/* app.use(express.json()) */ // for parsing application/json
-/* app.use(bodyParser.urlencoded({ extended: true })) */ // for parsing application/x-www-form-urlencoded
+/* app.use(express.json()) // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded */
 
 /* app.post('/pages', async function (request, response) {
   try {
@@ -60,17 +61,17 @@ const slackApp = new slack({
     console.error(error) // Log the error for debugging
     response.status(500).json({ message: 'Error creating page', error: error.message })
   }
-})
+}) */
 
-// slack post command
+/* // slack post command
 app.post('/slack-command-pages', slackCommand.post)
 
 // slack get inform command
 app.post('/slack-command-pages/database', slackCommand.getInform)
 
 // slack status command
-app.post('/slack-command-pages/status', slackCommand.getCompaniesReport)
- */
+app.post('/slack-command-pages/status', slackCommand.getCompaniesReport) */
+
 // send form
 /* app.post('/slack-command-pages/inform', (req, res) => {
   const trigger_id = req.body.trigger_id
@@ -148,96 +149,72 @@ app.post('/slack-command-pages/status', slackCommand.getCompaniesReport)
   }
 
   res.json(options)
-})
- */
+}) */
+
 // receive form
 /* app.post('/slack-command-pages/receive-form', (req, res) => {
   res.json({ response_type: 'in_channel', text: 'formulario recibido' })
 }) */
 
 // MODAL
-slackApp.command('/registrar', async ({ ack, body, client, logger }) => {
+slackApp.command('/post', async ({ ack, body, client, logger }) => {
   // Acknowledge the command request
   await ack()
-
-  try {
-    // Call views.open with the built-in client
-    const result = await client.views.open({
-      // Pass a valid trigger_id within 3 seconds of receiving it
-      trigger_id: body.trigger_id,
-      // View payload
-      view: {
-        type: 'modal',
-        // View identifier
-        callback_id: 'view_1',
-        title: {
-          type: 'plain_text',
-          text: 'Modal title'
-        },
-        blocks: [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: 'A quien le publicaste?:'
-            }
-          },
-          {
-            type: 'input',
-            block_id: 'url_input_block',
-            label: {
-              type: 'plain_text',
-              text: 'URL'
-            },
-            element: {
-              type: 'plain_text_input',
-              action_id: 'url_input',
-              placeholder: {
-                type: 'plain_text',
-                text: 'https://example.com'
-              }
-            }
-          },
-          {
-            type: 'section',
-            block_id: 'company_name',
-            text: {
-              type: 'mrkdwn',
-              text: 'Selecciona la empresa:'
-            },
-            accessory: {
-              type: 'external_select',
-              placeholder: {
-                type: 'plain_text',
-                text: 'empresa',
-                emoji: true
-              },
-              action_id: 'external_select_action',
-              min_query_length: 3
-            }
-          }
-
-        ],
-        submit: {
-          type: 'plain_text',
-          text: 'Submit'
-        }
-      }
-    })
-    logger.info(result)
-  } catch (error) {
-    logger.error(error)
+  savePostModal.trigger_id = body.trigger_id
+  const role = await postDatabase.getRole(body.user_id)
+  if (role === 'cm' || role === 'sup' || role === 'admin') {
+    try {
+      // Call views.open with the built-in client
+      const result = await client.views.open(savePostModal)
+      logger.info(result)
+    } catch (error) {
+      logger.error(error)
+    }
+  } else {
+    try {
+      client.chat.postMessage({
+        channel: body.channel_id,
+        text: 'Solo los community Managers pueden registrar publicaciones. Si eres uno y no puedes registrar tu publicación, comunícate con tu supervisor. :bell:'
+      })
+    } catch (error) {
+      logger.error(error)
+    }
   }
 })
 
 slackApp.options('external_select_action', async ({ options, ack }) => {
-  // Aquí podrías obtener información específica de una base de datos o cualquier otra fuente
-
+  let companies
   const userId = options.user.id
-  const cmName = await postDatabase.getCmName('U076JKVPXQS')
-  const filter = postDatabase.createFilter('Publica', 'multi_select', 'contains', cmName)
-  const companies = await postDatabase.collectPages(process.env.COMPANY_DATABASE_ID, filter)
-  console.log(cmName, filter, companies[0].properties.Name.title[0].plain_text)
+  const cm = await postDatabase.getCm(userId)
+  const userName = cm.name
+  const role = cm.role
+  if (role === 'sup' || role === 'admin') {
+    companies = await postDatabase.collectPages(process.env.COMPANY_DATABASE_ID)
+
+    if (companies) {
+      const optionsArray = []
+      for (const company of companies) {
+        optionsArray.push({
+          text: {
+            type: 'plain_text',
+            text: company.properties.Name.title[0].plain_text
+          },
+          value: company.properties.Name.title[0].plain_text
+        })
+      }
+
+      await ack({
+        options: optionsArray
+      })
+    } else {
+      await ack()
+    }
+    return
+  }
+  /* const cmName = await postDatabase.getCmName('U076JKVPXQS') */
+  const filter = postDatabase.createFilter('Publica', 'multi_select', 'contains', userName)
+  companies = await postDatabase.collectPages(process.env.COMPANY_DATABASE_ID, filter)
+
   if (companies) {
     const optionsArray = []
     for (const company of companies) {
@@ -283,7 +260,7 @@ slackApp.view('view_1', async ({ ack, body, view, logger }) => {
   }
 })
 
-/* slackApp.message('hello', async ({ message, say }) => {
+slackApp.message('hello', async ({ message, say }) => {
   // say() sends a message to the channel where the event was triggered
   console.log(message)
   await say({
@@ -347,13 +324,13 @@ slackApp.view('view_1', async ({ ack, body, view, logger }) => {
     ],
     text: `Hey there <@${message.user}>!`
   })
-}) */
+});
 
-slackApp.action('button_post', async ({ body, ack, say }) => {
+/* slackApp.action('button_post', async ({ body, ack, say }) => {
   // Acknowledge the action
   await ack()
   await say(`<@${body.user.id}> clicked the button`)
-});
+}) */
 
 (async () => {
   // Start your app
@@ -364,5 +341,4 @@ slackApp.action('button_post', async ({ body, ack, say }) => {
 
 /* const listener = app.listen(PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port)
-})
- */
+}) */

@@ -27,8 +27,36 @@ class postDatabase {
   static getCmName = async (idUser) => {
     const filter = this.createFilter('id_user', 'title', 'equals', idUser)
     const pages = await this.collectPages(process.env.PERMISSION_CM_DATABASE_ID, filter)
-    const name = pages[0].properties.cm_name.rich_text[0].plain_text
-    return name
+    try {
+      const name = pages[0].properties.cm_name.rich_text[0].plain_text
+      return name
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  static getRole = async (idUser) => {
+    const filter = this.createFilter('id_user', 'title', 'equals', idUser)
+    const pages = await this.collectPages(process.env.PERMISSION_CM_DATABASE_ID, filter)
+    try {
+      const role = pages[0].properties.role.rich_text[0].plain_text
+      return role
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  static getCm = async (idUser) => {
+    const filter = this.createFilter('id_user', 'title', 'equals', idUser)
+    const pages = await this.collectPages(process.env.PERMISSION_CM_DATABASE_ID, filter)
+    try {
+      const name = pages[0].properties.cm_name.rich_text[0].plain_text
+      const role = pages[0].properties.role.rich_text[0].plain_text
+      const dbId = pages[0].properties.db_id.rich_text[0].plain_text
+      return { name, role, dbId }
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   static getCmsDashboard = async () => {
@@ -125,11 +153,11 @@ class postDatabase {
 
     if (filter) {
       target.filter = filter
-    } else if (filters) {
+    } else if (filters.length > 0) {
       target.filter = filters
     }
 
-    console.log(target)
+    console.log('aqui', target)
     const pages = await notion.databases.query(target)
     /*  console.log(pages.results)
     console.log('collectPages', filter) */
@@ -150,6 +178,8 @@ class postDatabase {
     return filter
   }
 }
+
+postDatabase.getRole('U076NNY5X6Y')
 
 /* console.log('aqui', postDatabase.createFilter('Status', 'checkbox', 'equals', 'true')) */
 
